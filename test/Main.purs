@@ -1,23 +1,32 @@
 module Test.Main where
   
+import DOM.Tagless.Class
 import Prelude
 
-import DOM.Tagless.Class as D
+import Data.Nullable (Nullable)
+import Effect (Effect)
 
 
-program :: forall dom element. Monad dom => Element element =>
-    dom element
+program :: forall dom element. Monad dom => WindowTC dom =>
+    dom Element
 program = do
-  doc :: forall document. Document dom document => document
+  -- !!!
+  -- How to compose these instructions?
+  --   They are all in different monads -- `WindowTC`, `DocumentTC`, `ElementTC`, ...
+  --   Do we need a `MonadDOM` into which to lift each of these?
+  doc :: Document
     <- document
-  span :: forall element. Element dom element => element 
-    <- createElement (TagName "span") doc
-  setAttribute "id" "an-id" span
-  setAttribute "class" "a-class" span
-  body :: forall element. Element dom element => element
-    <- querySelector (Selector "body")
-  appendChild span' body
-  pure unit
+  let
+    span :: DocumentTC doc => doc Element
+    span = createElement (TagName "span") doc
+    span' :: ElementTC element => element Element
+    span' = do
+      setAttribute "id" "an-id" span
+      setAttribute "class" "a-class" span
+  body :: Nullable Element
+    <- querySelector (Selector "body") doc
+--   appendChild span body
+  pure span
 
 main :: Effect Unit
 main = program
